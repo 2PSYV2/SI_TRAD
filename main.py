@@ -5,6 +5,8 @@ import json
 import os, time, ctypes
 from dotenv import load_dotenv # enviorment params extracor
 
+#TODO
+# Export output into csv or json
 
 # Version + author
 VERSION = "V-0.1.1"
@@ -17,8 +19,8 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 CONFIG_PATH = "config.json"
 
 default_config = {
-    "models": ["deepseek/deepseek-r1-0528:free"],
-    "languages": ["Spanish"]
+    "models": ["deepseek/deepseek-r1-0528:free", "mistralai/mistral-small-3.2-24b-instruct:free"],
+    "languages": ["Spanish", "English", "Russian", "French", "German", "Japanese", "Korean", "Chinese", "Tagalog", "Polish"]
 }
 
 # Available default models
@@ -32,6 +34,15 @@ SYSTEM_ROLE = [
 
 # API requesst URL
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
+
+def reset_to_default():
+    global MODELS, LANGUAGES
+    MODELS = default_config["models"].copy()
+    LANGUAGES = default_config["languages"].copy()
+
+    save_config()
+    refresh_menus()
+    messagebox.showinfo("Reset", "Configuration was restored to default settings")
 
 # Load or create config
 def load_config():
@@ -175,8 +186,8 @@ def open_results():
 def open_preferences():
     pref = tk.Toplevel(root)
     pref.title("Preferences")
-    pref.geometry("400x250")
-    pref.minsize(350,200)
+    pref.geometry("500x400")
+    pref.minsize(450,350)
     pref.resizable(False, False)
     pref.grab_set()
     
@@ -203,6 +214,43 @@ def open_preferences():
     theme_box.pack(pady=5)
     theme_box.bind("<<ComboboxSelected>>", apply_theme)
     
+    tk.Label(pref, text="Remove Model", font=("Segoe UI", 11, "bold")).pack(pady=(5,2))
+    rm_model_var = tk.StringVar(value="")
+    rm_model_menu = ttk.Combobox(pref, textvariable=rm_model_var, values=MODELS, width=40, state="readonly")
+    rm_model_menu.pack(pady=2)
+
+    def remove_model():
+        target = rm_model_var.get()
+        if target in MODELS:
+            MODELS.remove(target)
+            save_config()
+            refresh_menus()
+            rm_model_menu["values"] = MODELS
+            rm_model_var.set("")
+            messagebox.showinfo("Removed", f"Model '{target}' was removed.")
+    tk.Button(pref, text="Remove Selected Model", command=remove_model).pack(pady=(0,10))
+
+    tk.Label(pref, text="Remove language", font=("Segoe UI", 11, "bold")).pack(pady=(5,2))
+    rm_lang_var = tk.StringVar(value="")
+    rm_lang_menu = ttk.Combobox(pref, textvariable=rm_lang_var, values=LANGUAGES, width=40, state="readonly")
+    rm_lang_menu.pack(pady=2)
+
+    def remove_lang():
+        target = rm_lang_var.get()
+        if target in LANGUAGES:
+            LANGUAGES.remove(target)
+            save_config()
+            refresh_menus()
+            rm_lang_menu["values"] = LANGUAGES
+            rm_lang_var.set("")
+            messagebox.showinfo("Removed", f"language '{target}' was removed.")
+
+    tk.Button(pref, text="Remove Selected language", command=remove_lang).pack(pady=(0,10))
+
+    ttk.Separator(pref, orient="horizontal").pack(fill="x",pady=10)
+
+    tk.Button(pref, text="Reset to Default Configuration", command=reset_to_default, fg="red").pack(pady=10)
+
     tk.Button(pref, text="Close", command=pref.destroy).pack(pady=20)
 
 
