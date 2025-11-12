@@ -1,0 +1,9 @@
+{
+    "models": [
+        "deepseek/deepseek-r1-0528:free"
+    ],
+    "languages": [
+        "Spanish",
+        "English"
+    ]
+}

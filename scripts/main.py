@@ -13,6 +13,14 @@ AUTHOR = "Yevhenii Edelshteyn Kylymnyk"
 load_dotenv()
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
+# Global paths
+CONFIG_PATH = "config.json"
+
+default_config = {
+    "models": ["deepseek/deepseek-r1-0528:free"],
+    "languages": ["Spanish"]
+}
+
 # Available default models
 MODELS = [
     "deepseek/deepseek-r1-0528:free"
@@ -24,6 +32,21 @@ SYSTEM_ROLE = [
 
 # API requesst URL
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
+
+# Load or create config
+def load_config():
+    if os.path.exists(CONFIG_PATH):
+        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    else:
+        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+            json.dump(default_config,f,indent=4)
+        return default_config
+
+def save_config():
+    cfg = {"models":MODELS, "languages": LANGUAGES}
+    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump(cfg, f, indent=4)
 
 # Call model by promt and model
 def call_model(prompt, model):
@@ -74,6 +97,49 @@ def translate():
     output_text.delete("1.0",tk.END)
     output_text.insert(tk.END, result+"\n")
     log_text.insert(tk.END,f"Task completed in {finish-start:.2f}s\n\n")
+
+def add_new_model():
+    win = tk.Toplevel(root)
+    win.title("Add new model")
+    win.geometry("400x150")
+    win.resizable(False, False)
+    win.grab_set()
+    tk.Label(win, text="Enter new model link:").pack(pady=10)
+    entry=tk.Entry(win, width=50)
+    entry.pack(pady=5)
+    def save():
+        new = entry.get().strip()
+        if new and new not in MODELS:
+            MODELS.append(new)
+            model_menu["values"] = MODELS
+            save_config()
+        win.destroy()
+    tk.Button(win,text="Add", command=save).pack(pady=10)
+
+def add_new_lang():
+    win = tk.Toplevel(root)
+    win.title("Add new language")
+    win.geometry("400x150")
+    win.resizable(False, False)
+    win.grab_set()
+    tk.Label(win, text="Enter new language name:").pack(pady=10)
+    entry = tk.Entry(win,width=50)
+    entry.pack(pady=5)
+    def save():
+        new = entry.get().strip()
+        if new and new not in LANGUAGES:
+            LANGUAGES.append(new)
+            lang_menu["values"] = LANGUAGES
+            save_config()
+        win.destroy()
+    tk.Button(win, text="Add", command=save).pack(pady=10)
+
+def on_model_select(event):
+    if model_var.get() == "+ Add new...":
+        add_new_model()
+def on_lang_select(event):
+    if lang_var.get() == "+ Add new...":
+        add_new_lang()
 
 def save_result():
     content = output_text.get("1.0",tk.END).strip()
@@ -167,6 +233,10 @@ try:
 except Exception:
     pass
 
+config =load_config()
+MODELS = config["models"]
+LANGUAGES = config["languages"]
+
 root = tk.Tk()
 root.title(f"SI_LANG - LLM Translation tool")
 root.geometry("1280x800")
@@ -189,19 +259,18 @@ menubar.add_cascade(label="Help", menu=help_menu)
 top_frame = tk.Frame(root)
 top_frame.pack(fill="x", pady=5)
 
-model_var = tk.StringVar(value=MODELS[0])
 tk.Label(top_frame, text="Model:").pack(side="left", padx=5)
-model_menu = ttk.Combobox(top_frame, textvariable=model_var, values=MODELS, width=40)
+model_var = tk.StringVar(value=MODELS[0])
+model_menu = ttk.Combobox(top_frame, textvariable=model_var, values=MODELS + ["+ Add new..."], width=40)
 model_menu.pack(side="left", padx=5)
+model_menu.bind("<<ComboboxSelected>>", on_model_select)
 
 # languages
 tk.Label(top_frame, text="Target Language:").pack(side="left", padx=(20,5))
-lang_var = tk.StringVar(value="Spanish")
-languages = ["Spanish"]
-# languages would extract the list from a textfile
-# Maybe add a config file so the user might load and save the params
-lang_menu = ttk.Combobox(top_frame, textvariable=lang_var, values=languages, width=20)
+lang_var = tk.StringVar(value=LANGUAGES[0])
+lang_menu = ttk.Combobox(top_frame, textvariable=lang_var, values=LANGUAGES + ["+ Add new..."], width=20)
 lang_menu.pack(side="left")
+lang_menu.bind("<<ComboboxSelected>>", on_lang_select)
 
 # ==== MAIN CONTAINER ====
 content_frame = tk.Frame(root)
