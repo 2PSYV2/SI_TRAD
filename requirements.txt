@@ -1,5 +1,4 @@
-openai
-anthropic
+requests
 pandas
 evaluate
 matplotlib
