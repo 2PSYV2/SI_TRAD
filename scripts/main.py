@@ -107,12 +107,14 @@ def add_new_model():
     tk.Label(win, text="Enter new model link:").pack(pady=10)
     entry=tk.Entry(win, width=50)
     entry.pack(pady=5)
+
     def save():
         new = entry.get().strip()
         if new and new not in MODELS:
             MODELS.append(new)
-            model_menu["values"] = MODELS
             save_config()
+            refresh_menus()
+            model_var.set(new)
         win.destroy()
     tk.Button(win,text="Add", command=save).pack(pady=10)
 
@@ -129,8 +131,9 @@ def add_new_lang():
         new = entry.get().strip()
         if new and new not in LANGUAGES:
             LANGUAGES.append(new)
-            lang_menu["values"] = LANGUAGES
             save_config()
+            refresh_menus()
+            lang_var.set(new)
         win.destroy()
     tk.Button(win, text="Add", command=save).pack(pady=10)
 
@@ -140,6 +143,10 @@ def on_model_select(event):
 def on_lang_select(event):
     if lang_var.get() == "+ Add new...":
         add_new_lang()
+
+def refresh_menus():
+    model_menu["values"] = MODELS + ["+ Add new..."]
+    lang_menu["values"] = LANGUAGES + ["+ Add new..."]
 
 def save_result():
     content = output_text.get("1.0",tk.END).strip()
@@ -261,14 +268,14 @@ top_frame.pack(fill="x", pady=5)
 
 tk.Label(top_frame, text="Model:").pack(side="left", padx=5)
 model_var = tk.StringVar(value=MODELS[0])
-model_menu = ttk.Combobox(top_frame, textvariable=model_var, values=MODELS + ["+ Add new..."], width=40)
+model_menu = ttk.Combobox(top_frame, textvariable=model_var, values=MODELS + ["+ Add new..."], width=40, state="readonly")
 model_menu.pack(side="left", padx=5)
 model_menu.bind("<<ComboboxSelected>>", on_model_select)
 
 # languages
 tk.Label(top_frame, text="Target Language:").pack(side="left", padx=(20,5))
 lang_var = tk.StringVar(value=LANGUAGES[0])
-lang_menu = ttk.Combobox(top_frame, textvariable=lang_var, values=LANGUAGES + ["+ Add new..."], width=20)
+lang_menu = ttk.Combobox(top_frame, textvariable=lang_var, values=LANGUAGES + ["+ Add new..."], width=20, state="readonly")
 lang_menu.pack(side="left")
 lang_menu.bind("<<ComboboxSelected>>", on_lang_select)
 
