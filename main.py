@@ -1,9 +1,10 @@
 import requests # model requests
 import tkinter as tk # GUI lib
 from tkinter import ttk, messagebox, filedialog
+from pathlib import Path
 import json
 import os, time, ctypes
-from dotenv import load_dotenv # enviorment params extracor
+from dotenv import load_dotenv, set_key # enviorment params extracor
 
 #TODO
 # Export output into csv or json
@@ -11,12 +12,21 @@ from dotenv import load_dotenv # enviorment params extracor
 # Version + author
 VERSION = "V-0.1.1"
 AUTHOR = "Yevhenii Edelshteyn Kylymnyk"
-# load API key
-load_dotenv()
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 # Global paths
 CONFIG_PATH = "config.json"
+ENV_PATH = Path(".env")
+
+def get_api_key():
+    try:
+        load_dotenv()
+        key = os.getenv("OPENROUTER_API_KEY")
+        if not key or key.strip() == "":
+            raise ValueError("Missing API key")
+        return key.strip()
+    except Exception:
+        return None
+
 
 default_config = {
     "models": ["deepseek/deepseek-r1-0528:free", "mistralai/mistral-small-3.2-24b-instruct:free"],
@@ -43,6 +53,50 @@ def reset_to_default():
     save_config()
     refresh_menus()
     messagebox.showinfo("Reset", "Configuration was restored to default settings")
+
+def open_api_key_window():
+    win = tk.Toplevel(root)
+    win.title("Set OpenRouter API key")
+    win.geometry("600x180")
+    win.resizable(False, False)
+    win.grab_set()
+
+    tk.Label(win, text="Enter your OpenRouter API key:", font=("Segoe UI", 10, "bold")).pack(pady=(15,5))
+
+    show_var = tk.BooleanVar(value=False)
+
+    entry = tk.Entry(win, width=80, show="*")
+    entry.pack(pady=(0,5),padx=10)
+
+    current_key = os.getenv("OPENROUTER_API_KEY")
+
+    if current_key:
+        entry.insert(0, current_key)
+
+    def toggle_show():
+        show_var.set(not show_var.get())
+        entry.config(show="" if show_var.get() else "*")
+        show_btn.config(text="Hide" if show_var.get() else "Show")
+
+    show_btn = tk.Button(win,text="Show",width=10,command=toggle_show)
+    show_btn.pack(pady=(0,10))
+
+    def save_key():
+        new_key = entry.get().strip()
+        if not new_key:
+            messagebox.showerror("Error","API key can not be empty.\nRefer to readme.md for instructions.")
+            return
+        ENV_PATH.touch(exist_ok=True)
+        set_key(ENV_PATH, "OPENROUTER_API_KEY", new_key)
+        load_dotenv()
+        global OPENROUTER_API_KEY
+        OPENROUTER_API_KEY = new_key
+        messagebox.showinfo("Saved","API key updated succesfully.")
+        win.destroy()
+    buttons = tk.Frame(win)
+    buttons.pack(pady=(5,10))
+    tk.Button(buttons, text="Save", command=save_key).pack(side="left", padx=10)
+    tk.Button(buttons, text="Close", command=win.destroy).pack(side="left", padx=10)
 
 # Load or create config
 def load_config():
@@ -281,6 +335,7 @@ def open_about():
 
     tk.Label(about, text=info_text, justify="left", font=("Segoe UI", 10)).pack(padx=20, pady=20)
 
+####################################################################
 
 # Fix for blurry screens
 try:
@@ -288,12 +343,24 @@ try:
 except Exception:
     pass
 
+# load API key
+load_dotenv()
+OPENROUTER_API_KEY = get_api_key()
+
+if not OPENROUTER_API_KEY:
+    messagebox.showwarning("Missing API Key","No OpenRouter API key detected.\nPlease input one in the next window.\nIf you are not sure where to get it, refer to readme.md")
+    root = tk.Tk()
+    root.withdraw()
+    open_api_key_window()
+    root.destroy()
+    OPENROUTER_API_KEY = get_api_key()
+
+root = tk.Tk()
 config =load_config()
 MODELS = config["models"]
 LANGUAGES = config["languages"]
 
-root = tk.Tk()
-root.title(f"SI_LANG - LLM Translation tool")
+root.title(f"OpenRouter Langer - LLM Translation Testing Tool")
 root.geometry("1280x800")
 
 menubar = tk.Menu(root)
@@ -301,6 +368,7 @@ root.config(menu=menubar)
 
 file_menu = tk.Menu(menubar,tearoff=0)
 file_menu.add_command(label="Preferences", command=open_preferences)
+file_menu.add_command(label="Set API Key", command=open_api_key_window)
 file_menu.add_separator()
 file_menu.add_command(label="Exit", command=root.destroy)
 menubar.add_cascade(label="File", menu=file_menu)
