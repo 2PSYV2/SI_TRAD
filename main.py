@@ -207,6 +207,7 @@ def bulk_translate_json():
     log_text.insert(tk.END, f"Sending bulk translation request with {len(pairs)} sentences...\n")
     root.update_idletasks()
     start = time.time()
+    # May return a simple string if the format is invalid
     result = call_model(prompt=prompt, model=model)
     finish = time.time()
 
@@ -214,7 +215,7 @@ def bulk_translate_json():
         llm_output = json.loads(result)
     except Exception:
         import re
-        match = re.search = re.search(r"\[[\s\S]*\]", result)
+        match = re.search(r"\[[\s\S]*\]", result)
         if match:
             try:
                 llm_output = json.loads(match.group(0))
@@ -223,7 +224,7 @@ def bulk_translate_json():
         else:
             llm_output = []
     if not llm_output:
-        messagebox.showerror("Error", "Something went wrong, the model output is not a valid JSON")
+        messagebox.showerror("Error", f"Something went wrong, the model output is not a valid JSON:\n{result}")
         return        
 
     merged = []
