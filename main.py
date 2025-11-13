@@ -53,8 +53,8 @@ from dotenv import load_dotenv, set_key # enviorment params extracor
 # Export output into csv or json
 
 # Version + author
-VERSION = "V-0.1.3a"
-AUTHOR = "Yevhenii Edelshteyn Kylymnyk"
+VERSION = "V-1.0-Knorozov"
+AUTHOR = "Eugene Edelshteyn Kylymnyk"
 
 # Global paths
 CONFIG_PATH = os.path.join(DATA_DIR, "config.json")
@@ -87,6 +87,7 @@ SYSTEM_ROLES = [
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 def reset_to_default():
+    global DEFAULT_CONFIG
     if len(DEFAULT_CONFIG)==0:
         with open(DEFAULT_CONFIG_PATH, "r", encoding="utf-8") as f:
             DEFAULT_CONFIG = json.load(f)
@@ -156,6 +157,106 @@ def save_config():
     cfg = {"models":MODELS, "languages": LANGUAGES, "api": API_URL, "system_roles": SYSTEM_ROLES}
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
         json.dump(cfg, f, indent=4)
+
+def bulk_translate_json():
+    path = filedialog.askopenfilename(filetypes=[("JSON files", "*.json")])
+
+    if not path:
+        return
+    try:
+        with open(path,"r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed toload JSON:{e}")
+
+    if "pairs" not in data or "source_language" not in data or "target_language" not in data:
+        messagebox.showerror("Error", "Invalid JSON structure.\nRefer to readme.md for details.")
+        return
+    src_lang = data["source_language"]
+    tgt_lang = data["target_language"]
+    pairs = data["pairs"]
+    if not pairs:
+        messagebox.showwarning("Warning", "No pairs were found in JSON, check the format.")
+        return
+    
+
+
+    if tgt_lang in LANGUAGES:
+        lang_var.set(tgt_lang)
+    else:
+        messagebox.showwarning("Warning", "Target language was not on the list of languages.\nWe will add it for you.")
+        LANGUAGES.append(tgt_lang)
+        save_config()
+        lang_var.set(tgt_lang)
+
+
+    numbered_text = "\n".join(f"{p['id']}. {p['original']}" for p in pairs)
+    input_text.delete("1.0", tk.END)
+    input_text.insert(tk.END, numbered_text)
+    output_text.delete("1.0", tk.END)
+
+    model = model_var.get()
+
+    prompt = (
+        f"you are a professional translation ssytem.\n"
+        f"Trasnlate the folowing sentences from {src_lang} to {tgt_lang}.\n"
+        f"Return ONLY a valid JSON array of objects with fields 'id' and 'translation'.\n\n"
+        f"{numbered_text}"
+    )
+
+    log_text.insert(tk.END, f"Sending bulk translation request with {len(pairs)} sentences...\n")
+    root.update_idletasks()
+    start = time.time()
+    result = call_model(prompt=prompt, model=model)
+    finish = time.time()
+
+    try:
+        llm_output = json.loads(result)
+    except Exception:
+        import re
+        match = re.search = re.search(r"\[[\s\S]*\]", result)
+        if match:
+            try:
+                llm_output = json.loads(match.group(0))
+            except Exception:
+                llm_output = []
+        else:
+            llm_output = []
+    if not llm_output:
+        messagebox.showerror("Error", "Something went wrong, the model output is not a valid JSON")
+        return        
+
+    merged = []
+    translations_by_id = {int(r.get("id",0)): r.get("translation","") for r in llm_output}
+    for p in pairs:
+        merged.append({
+            "id": p["id"],
+            "original": p["original"],
+            "reference": p.get("reference",""),
+            "llm_translation": translations_by_id.get(p["id"],"")
+        })
+    output_data = {
+        "model": model,
+        "source_language": src_lang,
+        "target_language": tgt_lang,
+        "results": merged,
+        "processing_time_sec": round(finish-start, 2)
+    }
+
+    out_path = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON files", "*.json")])
+    out_pairs = output_data["results"]
+    numbered_output = "\n".join(f"{p['id']}. {p['llm_translation']}" for p in out_pairs)
+    if out_path:
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(output_data, f, indent=4,ensure_ascii=False)
+        messagebox.showinfo("Done", f"Bulk translation complete.\nSaved to: {out_path}")
+    
+        output_text.delete("1.0", tk.END)
+        output_text.insert(tk.END, f"{numbered_output}")
+        log_text.insert(tk.END, f"Bulk translation complete -> {out_path}\nTime: {finish-start:.2f}\n\n")
+    
+    else:
+        messagebox.showinfo("Cancelled", "Export cancelled.")
 
 # Call model by promt and model
 def call_model(prompt, model):
@@ -269,17 +370,9 @@ def save_result():
         log_text.insert(tk.END,f"Output saved at {path}\n")
 
 def open_results():
-    paths = filedialog.askopenfilenames(filetypes=[("Text Files","*.txt")])
-    if not paths:
-        return
-    new = tk.Toplevel(root)
-    new.title("Output Comparator")
-    text = tk.Text(new, wrap="word", height=30, width=100)
-    text.pack(padx=10,pady=10)
-    for path in paths:
-        with open(path, "r", encoding="utf-8") as f:
-            text.insert(tk.END, f"--- {os.path.basename(path)} ---\n")
-            text.insert(tk.END, f.read()+"\n\n")
+    #TODO
+    #Open the window to ask for JSON files to compare and compute
+    return
 
 def open_preferences():
     pref = tk.Toplevel(root)
@@ -441,7 +534,7 @@ def open_preferences():
 
 def open_about():
     about = tk.Toplevel(root)
-    about.title("About SI_LANG")
+    about.title("About OpenRouter Langer")
     about.geometry("640x680")
     about.minsize(200,200)
     about.resizable(False, False)
@@ -453,7 +546,7 @@ def open_about():
     about.geometry(f"+{x}+{y}")
 
     info_text = (
-        f"OpenRouter Langer - LLM Translation Tool\n"
+        f"OpenRouter Langer - LLM Translation and comparison Tool\n"
         f"Version: {VERSION}\n\n"
         f"Developed by {AUTHOR}\n"
         "University of Alicante\n\n"
@@ -579,7 +672,7 @@ output_text.pack(fill="both", expand=True)
 button_frame = tk.Frame(content_frame)
 button_frame.pack(pady=5)
 tk.Button(button_frame, text="Translate", command=translate).pack(side="left", padx=5)
-tk.Button(button_frame, text="Save Output", command=save_result).pack(side="left", padx=5)
+tk.Button(button_frame, text="Translate from JSON", command=bulk_translate_json).pack(side="left", padx=5)
 tk.Button(button_frame, text="Compare Outputs", command=open_results).pack(side="left", padx=5)
 
 # --- Log section (bottom, full width) ---

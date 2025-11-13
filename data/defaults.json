@@ -23,7 +23,7 @@
     "api":
         "https://openrouter.ai/api/v1/chat/completions",
     "system_roles": [
-        "You are a translation assistant. Provide exclusively the translation of the requested text",
-        "You are a profesional interpreter. You must translate the text as close to it's original while maintaining as much context as possible. Do not add anything besides the translation."
+        "You are a translation assistant. Provide exclusively the translation of the requested text.",
+        "You are a profesional interpreter. You must translate the text as close to it's original while maintaining as much context as possible."
     ]
 }
