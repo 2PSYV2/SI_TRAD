@@ -4,4 +4,4 @@ __pycache__/
 *.pyc
 losg/
 venv/
-.json
+config.json

@@ -1,25 +1,72 @@
-import requests # model requests
-import tkinter as tk # GUI lib
-from tkinter import ttk, messagebox, filedialog
+# Auto install missing packages
+import importlib.util, subprocess, sys, os
 from pathlib import Path
-import json
-import os, time, ctypes
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "data")
+REQ_FILE = os.path.join(DATA_DIR, "requirements.txt")
+
+MODULE_NAME_MAP = {
+    "python-dotenv": "dotenv",
+}
+
+def ensure_requirements():
+
+    if os.environ.get("DEPS_CHECKED") == "1":
+        return
+
+    if not os.path.exists(REQ_FILE):
+        print("[!] requirements.txt not found - skipping dependency check, ensure you have all the required libs manually.")
+        return
+    
+    with open(REQ_FILE, "r", encoding="utf-8") as f:
+        pkgs = [line.strip().split("==")[0] for line in f if line.strip() and not line.startswith("#")]
+
+    missing = []
+    for pkg in pkgs:
+        module_name =MODULE_NAME_MAP.get(pkg, pkg)
+        try:
+            if importlib.util.find_spec(module_name) is None:
+                missing.append(pkg)
+        except Exception:
+            missing.append(pkg)
+    if missing:
+        print(f"[!] Missing packages: {'| '.join(missing)}")
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", REQ_FILE])
+            os.environ["DEPS_CHECKED"] = "1"
+            print("[+] Dependencies installed.")
+            os.execv(sys.executable, [sys.executable] + sys.argv)
+        except Exception as e:
+            print(f"[x] Failed to install dependencies: {e}")
+            time.sleep(3)
+
+ensure_requirements()
+
+################### Main segment ###################
+
+import json, time, ctypes, requests
+import tkinter as tk # GUI lib
+from tkinter import ttk, messagebox, filedialog, PhotoImage, simpledialog
 from dotenv import load_dotenv, set_key # enviorment params extracor
 
 #TODO
 # Export output into csv or json
 
 # Version + author
-VERSION = "V-0.1.1"
+VERSION = "V-0.1.3a"
 AUTHOR = "Yevhenii Edelshteyn Kylymnyk"
 
 # Global paths
-CONFIG_PATH = "config.json"
-ENV_PATH = Path(".env")
+CONFIG_PATH = os.path.join(DATA_DIR, "config.json")
+DEFAULT_CONFIG_PATH = os.path.join(DATA_DIR, "defaults.json")
+ENV_PATH = os.path.join(DATA_DIR, ".env")
+
+ICO_PATH = os.path.join(DATA_DIR, "icon.ico")
+PNG_PATH = os.path.join(DATA_DIR, "icon.png")
 
 def get_api_key():
     try:
-        load_dotenv()
+        load_dotenv(dotenv_path=ENV_PATH)
         key = os.getenv("OPENROUTER_API_KEY")
         if not key or key.strip() == "":
             raise ValueError("Missing API key")
@@ -27,18 +74,12 @@ def get_api_key():
     except Exception:
         return None
 
-
-default_config = {
-    "models": ["deepseek/deepseek-r1-0528:free", "mistralai/mistral-small-3.2-24b-instruct:free"],
-    "languages": ["Spanish", "English", "Russian", "French", "German", "Japanese", "Korean", "Chinese", "Tagalog", "Polish"]
-}
-
 # Available default models
 MODELS = [
     "deepseek/deepseek-r1-0528:free"
 ]
 
-SYSTEM_ROLE = [
+SYSTEM_ROLES = [
     "You are a translation assistant. Provide exclusively the translation of the requested text"
 ]
 
@@ -46,16 +87,19 @@ SYSTEM_ROLE = [
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 def reset_to_default():
+    if len(DEFAULT_CONFIG)==0:
+        with open(DEFAULT_CONFIG_PATH, "r", encoding="utf-8") as f:
+            DEFAULT_CONFIG = json.load(f)
     global MODELS, LANGUAGES
-    MODELS = default_config["models"].copy()
-    LANGUAGES = default_config["languages"].copy()
+    MODELS = DEFAULT_CONFIG["models"].copy()
+    LANGUAGES = DEFAULT_CONFIG["languages"].copy()
 
     save_config()
     refresh_menus()
     messagebox.showinfo("Reset", "Configuration was restored to default settings")
 
-def open_api_key_window():
-    win = tk.Toplevel(root)
+def open_api_key_window(parent=None):
+    win = tk.Toplevel(parent)
     win.title("Set OpenRouter API key")
     win.geometry("600x180")
     win.resizable(False, False)
@@ -105,11 +149,11 @@ def load_config():
             return json.load(f)
     else:
         with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-            json.dump(default_config,f,indent=4)
-        return default_config
+            json.dump(DEFAULT_CONFIG,f,indent=4)
+        return DEFAULT_CONFIG
 
 def save_config():
-    cfg = {"models":MODELS, "languages": LANGUAGES}
+    cfg = {"models":MODELS, "languages": LANGUAGES, "api": API_URL, "system_roles": SYSTEM_ROLES}
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
         json.dump(cfg, f, indent=4)
 
@@ -124,7 +168,7 @@ def call_model(prompt, model):
     data = {
         "model": model,
         "messages":[
-            {"role": "system", "content": SYSTEM_ROLE[0]},
+            {"role": "system", "content": SYSTEM_ROLES[0]},
             {"role": "user", "content": prompt}
         ]
     }
@@ -240,38 +284,54 @@ def open_results():
 def open_preferences():
     pref = tk.Toplevel(root)
     pref.title("Preferences")
-    pref.geometry("500x400")
-    pref.minsize(450,350)
+    pref.geometry("640x480")
+    pref.minsize(640, 480)
     pref.resizable(False, False)
     pref.grab_set()
-    
-    pref.update_idletasks()
-    x = root.winfo_x()+(root.winfo_width() // 2 - pref.winfo_width() // 2)
-    y = root.winfo_y() + (root.winfo_height() // 2 - pref.winfo_height() // 2)
-    pref.geometry(f"+{x}+{y}")
 
-    tk.Label(pref, text="Theme", font=("Segoe UI", 11, "bold")).pack(pady=(20,10))
+    # --- Canvas + Scroll setup ---
+    canvas = tk.Canvas(pref, borderwidth=0, highlightthickness=0)
+    scrollbar = ttk.Scrollbar(pref, orient="vertical", command=canvas.yview)
+    scroll_frame = tk.Frame(canvas)
+
+    # Correct configure event binding
+    scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+    canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+
+    canvas.configure(yscrollcommand=scrollbar.set)
+    canvas.pack(side="left", fill="both", expand=True)
+    scrollbar.pack(side="right", fill="y")
+
+    # --- Helper: consistent left padding ---
+    PADX = 10
+
+    # === THEME SECTION ===
+    tk.Label(scroll_frame, text="Theme", font=("Segoe UI", 11, "bold")).pack(anchor="w", padx=PADX, pady=(15, 5))
     theme_var = tk.StringVar(value="Light")
 
     def apply_theme(event=None):
         selected = theme_var.get()
         if selected == "Dark":
             root.config(bg="#1e1e1e")
-            root.config()
             for w in [input_text, output_text, log_text]:
                 w.config(bg="#2d2d2d", fg="white", insertbackground="white")
         else:
             root.config(bg="SystemButtonFace")
             for w in [input_text, output_text, log_text]:
                 w.config(bg="white", fg="black", insertbackground="black")
-    theme_box = ttk.Combobox(pref, textvariable=theme_var, values=["Light", "Dark"], width=20, state="readonly")
-    theme_box.pack(pady=5)
+
+    theme_box = ttk.Combobox(scroll_frame, textvariable=theme_var,
+                             values=["Light", "Dark"], width=20, state="readonly")
+    theme_box.pack(anchor="w", padx=PADX, pady=(0, 10))
     theme_box.bind("<<ComboboxSelected>>", apply_theme)
-    
-    tk.Label(pref, text="Remove Model", font=("Segoe UI", 11, "bold")).pack(pady=(5,2))
+
+    # === MODEL SECTION ===
+    ttk.Separator(scroll_frame, orient="horizontal").pack(fill="x", padx=PADX, pady=5)
+    tk.Label(scroll_frame, text="Remove Model", font=("Segoe UI", 11, "bold")).pack(anchor="w", padx=PADX, pady=(5, 2))
+
     rm_model_var = tk.StringVar(value="")
-    rm_model_menu = ttk.Combobox(pref, textvariable=rm_model_var, values=MODELS, width=40, state="readonly")
-    rm_model_menu.pack(pady=2)
+    rm_model_menu = ttk.Combobox(scroll_frame, textvariable=rm_model_var, values=MODELS, width=40, state="readonly")
+    rm_model_menu.pack(anchor="w", padx=PADX, pady=(0, 2))
 
     def remove_model():
         target = rm_model_var.get()
@@ -282,12 +342,15 @@ def open_preferences():
             rm_model_menu["values"] = MODELS
             rm_model_var.set("")
             messagebox.showinfo("Removed", f"Model '{target}' was removed.")
-    tk.Button(pref, text="Remove Selected Model", command=remove_model).pack(pady=(0,10))
 
-    tk.Label(pref, text="Remove language", font=("Segoe UI", 11, "bold")).pack(pady=(5,2))
+    tk.Button(scroll_frame, text="Remove Selected Model", command=remove_model)\
+        .pack(anchor="w", padx=PADX, pady=(0, 8))
+
+    # === LANGUAGE SECTION ===
+    tk.Label(scroll_frame, text="Remove Language", font=("Segoe UI", 11, "bold")).pack(anchor="w", padx=PADX, pady=(5, 2))
     rm_lang_var = tk.StringVar(value="")
-    rm_lang_menu = ttk.Combobox(pref, textvariable=rm_lang_var, values=LANGUAGES, width=40, state="readonly")
-    rm_lang_menu.pack(pady=2)
+    rm_lang_menu = ttk.Combobox(scroll_frame, textvariable=rm_lang_var, values=LANGUAGES, width=40, state="readonly")
+    rm_lang_menu.pack(anchor="w", padx=PADX, pady=(0, 2))
 
     def remove_lang():
         target = rm_lang_var.get()
@@ -297,15 +360,81 @@ def open_preferences():
             refresh_menus()
             rm_lang_menu["values"] = LANGUAGES
             rm_lang_var.set("")
-            messagebox.showinfo("Removed", f"language '{target}' was removed.")
+            messagebox.showinfo("Removed", f"Language '{target}' was removed.")
 
-    tk.Button(pref, text="Remove Selected language", command=remove_lang).pack(pady=(0,10))
+    tk.Button(scroll_frame, text="Remove Selected Language", command=remove_lang)\
+        .pack(anchor="w", padx=PADX, pady=(0, 8))
 
-    ttk.Separator(pref, orient="horizontal").pack(fill="x",pady=10)
+    # === API SECTION ===
+    ttk.Separator(scroll_frame, orient="horizontal").pack(fill="x", padx=PADX, pady=5)
+    tk.Label(scroll_frame, text="API URL", font=("Segoe UI", 11, "bold")).pack(anchor="w", padx=PADX, pady=(5, 2))
 
-    tk.Button(pref, text="Reset to Default Configuration", command=reset_to_default, fg="red").pack(pady=10)
+    api_var = tk.StringVar(value=API_URL)
+    api_entry = tk.Entry(scroll_frame, textvariable=api_var, width=60)
+    api_entry.pack(anchor="w", padx=PADX, pady=(0, 2))
 
-    tk.Button(pref, text="Close", command=pref.destroy).pack(pady=20)
+    def save_api():
+        global API_URL
+        API_URL = api_var.get().strip()
+        save_config()
+        messagebox.showinfo("Saved", "API URL updated successfully.")
+
+    tk.Button(scroll_frame, text="Save API URL", command=save_api).pack(anchor="w", padx=PADX, pady=(2, 8))
+
+    # === SYSTEM ROLES SECTION ===
+    ttk.Separator(scroll_frame, orient="horizontal").pack(fill="x", padx=PADX, pady=5)
+    tk.Label(scroll_frame, text="System Roles", font=("Segoe UI", 11, "bold")).pack(anchor="w", padx=PADX, pady=(5, 2))
+
+    role_var = tk.StringVar(value=SYSTEM_ROLES[0] if SYSTEM_ROLES else "")
+    role_menu = ttk.Combobox(scroll_frame, textvariable=role_var,
+                             values=SYSTEM_ROLES + ["+ Add new..."], width=60, state="readonly")
+    role_menu.pack(anchor="w", padx=PADX, pady=(0, 2))
+
+    def add_role():
+        new = simpledialog.askstring("Add System Role", "Enter new system role:")
+        if new and new not in SYSTEM_ROLES:
+            SYSTEM_ROLES.append(new)
+            save_config()
+            role_menu["values"] = SYSTEM_ROLES + ["+ Add new..."]
+
+    def set_role(event=None):
+        global SYSTEM_ROLES
+        if role_var.get() == "+ Add new...":
+            add_role()
+            return
+        selected = role_var.get()
+        if selected:
+            SYSTEM_ROLES = [selected]
+            save_config()
+
+    role_menu.bind("<<ComboboxSelected>>", set_role)
+
+    def remove_role():
+        selected = role_var.get()
+        if selected in SYSTEM_ROLES:
+            SYSTEM_ROLES.remove(selected)
+            save_config()
+            role_menu["values"] = SYSTEM_ROLES + ["+ Add new..."]
+            messagebox.showinfo("Removed", f"System role removed: {selected}")
+
+    tk.Button(scroll_frame, text="Remove Selected Role", command=remove_role)\
+        .pack(anchor="w", padx=PADX, pady=(2, 8))
+
+    # === RESET & CLOSE ===
+    ttk.Separator(scroll_frame, orient="horizontal").pack(fill="x", padx=PADX, pady=5)
+    tk.Button(scroll_frame, text="Reset to Default Configuration", command=reset_to_default, fg="red")\
+        .pack(anchor="w", padx=PADX, pady=(10, 5))
+    tk.Button(scroll_frame, text="Close", command=pref.destroy)\
+        .pack(anchor="w", padx=PADX, pady=(0, 15))
+
+    # --- Final scroll calibration ---
+    pref.update_idletasks()
+    canvas.configure(scrollregion=canvas.bbox("all"))
+
+    def _on_mousewheel(event):
+        canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+    canvas.bind_all("<MouseWheel>", _on_mousewheel)
 
 
 def open_about():
@@ -343,19 +472,29 @@ try:
 except Exception:
     pass
 
+if os.path.exists(DEFAULT_CONFIG_PATH):
+    with open(DEFAULT_CONFIG_PATH, "r", encoding="utf-8") as f:
+        DEFAULT_CONFIG = json.load(f)
+else:
+    messagebox.showwarning("Warning", "No default settings found.")
+
 # load API key
 load_dotenv()
 OPENROUTER_API_KEY = get_api_key()
 
+root = tk.Tk()
+
 if not OPENROUTER_API_KEY:
     messagebox.showwarning("Missing API Key","No OpenRouter API key detected.\nPlease input one in the next window.\nIf you are not sure where to get it, refer to readme.md")
-    root = tk.Tk()
-    root.withdraw()
     open_api_key_window()
-    root.destroy()
     OPENROUTER_API_KEY = get_api_key()
 
-root = tk.Tk()
+try:
+    root.iconbitmap(ICO_PATH)
+except:
+    icon = PhotoImage(file=PNG_PATH)
+    root.iconphoto(True, icon)
+
 config =load_config()
 MODELS = config["models"]
 LANGUAGES = config["languages"]
@@ -436,6 +575,3 @@ log_text = tk.Text(log_frame, height=8, wrap="word", bg="#e6e6e6", font=("Consol
 log_text.pack(fill="both", expand=True)
 
 root.mainloop()
-
-
-
