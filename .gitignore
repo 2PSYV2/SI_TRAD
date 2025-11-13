@@ -4,4 +4,7 @@ __pycache__/
 *.pyc
 losg/
 venv/
-config.json
+*.json
+
+!defaults.json
+!input.json

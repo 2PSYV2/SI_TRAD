@@ -1,0 +1,16 @@
+{
+  "source_language": "English",
+  "target_language": "Spanish",
+  "pairs": [
+    {
+      "id": 1,
+      "original": "Hello, how are you?",
+      "reference": "Hola, ¿cómo estás?"
+    },
+    {
+      "id": 2,
+      "original": "The sun is shining brightly today.",
+      "reference": "El sol brilla intensamente hoy."
+    }
+  ]
+}

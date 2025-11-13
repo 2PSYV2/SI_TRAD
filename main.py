@@ -435,13 +435,15 @@ def open_preferences():
         canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
     canvas.bind_all("<MouseWheel>", _on_mousewheel)
+    canvas.update_idletasks()
+    pref.geometry("")
 
 
 def open_about():
     about = tk.Toplevel(root)
     about.title("About SI_LANG")
-    about.geometry("500x400")
-    about.minsize(400,300)
+    about.geometry("640x680")
+    about.minsize(200,200)
     about.resizable(False, False)
     about.grab_set()
 
@@ -451,7 +453,7 @@ def open_about():
     about.geometry(f"+{x}+{y}")
 
     info_text = (
-        f"SI_LANG - LLM Translation Tool\n"
+        f"OpenRouter Langer - LLM Translation Tool\n"
         f"Version: {VERSION}\n\n"
         f"Developed by {AUTHOR}\n"
         "University of Alicante\n\n"
@@ -462,7 +464,20 @@ def open_about():
         "© 2025 Yevhenii Edelshteyn Kylymnyk"
     )
 
+    try:
+        logo_img = tk.PhotoImage(file=PNG_PATH)
+    except Exception as e:
+        print("[Error] image could not be loaded: {e}")
+        logo_img = None
+    if logo_img:
+        img_label = tk.Label(about, image=logo_img)
+        img_label.image = logo_img
+        img_label.pack(anchor="center")
+
     tk.Label(about, text=info_text, justify="left", font=("Segoe UI", 10)).pack(padx=20, pady=20)
+
+    about.update_idletasks()
+    about.geometry("")
 
 ####################################################################
 
