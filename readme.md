@@ -55,15 +55,16 @@ The Evaluator WILL Parse EVERY single .py file in the folder so do NOT include n
 
 ### FAQ
 
-  
+<details>  
+<summary>
 
 > Why shouldn't I share my API with friends/relatives/~~my local spy/concubines/vassals~~/etc.?
-
+</summary>
   
 
 Your API key is yours and only yours. If you decide to share the API key bare in mind that ANYONE with access to it might and WILL use it to burn through tokens. If you ever wish to share an API key with someone, you should generate a new one with expiration date and spending limit if it is decided to be a paid key. Even free personal key should not be shared as they usually won't have expiration date and will become time bombs.
 
-  
+  </details>
 
 > How do I switch the API key?
 
