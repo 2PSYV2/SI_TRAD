@@ -163,7 +163,7 @@ The method to send the API calls is "r = requests.post(API_URL, headers=headers,
 
 Langer is licensed under MIT license. All the information regarding the legal status of such actions must be referred to at LICENSE.txt
 
-  
+  </details>
 
 ### Technical details
 
