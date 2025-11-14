@@ -164,7 +164,13 @@ def save_config():
         json.dump(cfg, f, indent=4)
 
 def bulk_translate_json():
-    path = filedialog.askopenfilename(filetypes=[("JSON files", "*.json")])
+    sets_dir = Path("sets")
+    input_dir = sets_dir / "input"
+    output_dir = sets_dir / "output"
+
+    path = filedialog.askopenfilename(initialdir=input_dir,filetypes=[("JSON files", "*.json")])
+    input_path = Path(path)
+    input_name = input_path.stem
 
     if not path:
         return
@@ -249,7 +255,10 @@ def bulk_translate_json():
         "processing_time_sec": round(finish-start, 2)
     }
 
-    out_path = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON files", "*.json")])
+    safe_model_name = model.replace("/","_").replace(":","_")
+    otput_filename = f"{input_name}_{safe_model_name}.json"
+
+    out_path = filedialog.asksaveasfilename(initialdir=output_dir, initialfile=otput_filename, defaultextension=".json", filetypes=[("JSON files", "*.json")])
     out_pairs = output_data["results"]
     numbered_output = "\n".join(f"{p['id']}. {p['llm_translation']}" for p in out_pairs)
     if out_path:
