@@ -53,7 +53,7 @@ from dotenv import load_dotenv, set_key # enviorment params extracor
 # Export output into csv or json
 
 # Version + author
-VERSION = "V-1.2-Knorozov"
+VERSION = "V-1.5-Knorozov"
 AUTHOR = "Eugene Edelshteyn Kylymnyk"
 
 # Global paths

@@ -4,7 +4,7 @@ from tkinter import filedialog, messagebox, ttk, PhotoImage
 from pathlib import Path
 from datetime import datetime
 
-VERSION = "V-1.2-Knorozov"
+VERSION = "V-1.5-Knorozov"
 AUTHOR = "Eugene Edelshteyn Kylymnyk"
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
