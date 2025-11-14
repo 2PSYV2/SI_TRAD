@@ -65,41 +65,50 @@ The Evaluator WILL Parse EVERY single .py file in the folder so do NOT include n
 Your API key is yours and only yours. If you decide to share the API key bare in mind that ANYONE with access to it might and WILL use it to burn through tokens. If you ever wish to share an API key with someone, you should generate a new one with expiration date and spending limit if it is decided to be a paid key. Even free personal key should not be shared as they usually won't have expiration date and will become time bombs.
 
   </details>
+<details>  
+<summary>
 
 > How do I switch the API key?
-
+</summary>
   
 
 Go to the "File" --> "Set API Key"
 
-  
+  </details>  
+  <details>  
+<summary>
 
 >Where is my API key stored?
-
-  
+  </summary>
 
 /Data/ folder houses miscellaneous data like settings and your personal API key. To be precise the key is inside ".env" file. Beware about the file as it is not encrypted and thus anyone with the access to the file might compromise your API key, thus I recommend to create a new API key to use exclusively for Langer and set it's expiration date to anything but "never".
 
-  
+  </details>  
+<details>  
+<summary>
 
 >What's the difference between "Translate" and "Translate from JSON"?
-
+</summary>
   
 
 Plain translate just sends the API request to the model appending the translation segment, it allows you to send literally anything with minor tweaks. "Translate from JSON" is a tool to translate multiple texts simultaneously and store additional processing data. File valid for "Translate from JSON" must include origin language, target language, phrase in the original language and reference translation in target language. The output file from this operation will include additionally the LLM's translation, model's reference and time employed in the process.
 
-  
+  </details>  
+ <details> 
+<summary>
 
 > I constantly receive: "[ERROR] Request limit reached, try again later." How to fix it?
-
+</summary>
   
 
 You can not "fix it", the error means you have exhausted your API's calls and thus must wait a bit. Usually you see it if you use a free model as their bandwidth and tokens are limited and thus you can run dry fast. If you MUST use specific model you should either wait or switch to a paid version. Meanwhile if you just need SOME translation you may switch to other model which may or may not be less congested at the time.
 
-  
+   </details> 
+   <details> 
+   <summary>
 
 > How to add more languages or models?
-
+</summary>
   
 
 In the boxes where you can select ether of them, you can find the option "+ Add new...".
@@ -110,18 +119,22 @@ In the boxes where you can select ether of them, you can find the option "+ Add 
 
 - Models: Access OpenRouter's https://openrouter.ai/models page and choose freely which you want to use in the app. I would recommend applying these filters to narrow the selection to the most optimal LLMs for translation. (https://openrouter.ai/models?fmt=cards&input_modalities=text&output_modalities=text&categories=translation)
 
-  
+  </details> 
+  <details> 
+  <summary>
 
 > Can I use the program for other prompts rather than translation?
-
+</summary>
   
 
 Yes and No. Langer is no more than a relay and a wrapper to your API calls. By default the behavior of the LLM is set to: "You are a translation assistant. Provide exclusively the translation of the requested text." and thus it's responses will tend to be in this awe. You can change the systems role in preferences to be anything and thus virtually convert Langer into your personal API Wrapper.
 
-  
+  </details> 
+  <details> 
+  <summary>
 
 > Do you plan on implementing calls on locally instantiated LLMs?
-
+</summary>
   
 
 By default Langer redirects it's API calls and requests to: "https://openrouter.ai/api/v1/chat/completions" but it is not forced nor hard-coded to do so, furthermore, you can change the URL to be whatever you wish.
@@ -140,10 +153,12 @@ The method to send the API calls is "r = requests.post(API_URL, headers=headers,
 
 - Ollama: Uses slightly different API thus might need minor tweaks to the schema. Either wait untill I decide to implement schema editing and selection, or edit the code segment relevant to the payload construction.
 
-  
+  </details> 
+  <details>
+  <summary>
 
 > Can I edit/fork/sell/etc. Langer?
-
+</summary>
   
 
 Langer is licensed under MIT license. All the information regarding the legal status of such actions must be referred to at LICENSE.txt
