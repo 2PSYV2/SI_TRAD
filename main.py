@@ -131,9 +131,14 @@ def open_api_key_window(parent=None):
         if not new_key:
             messagebox.showerror("Error","API key can not be empty.\nRefer to readme.md for instructions.")
             return
-        ENV_PATH.touch(exist_ok=True)
-        set_key(ENV_PATH, "OPENROUTER_API_KEY", new_key)
-        load_dotenv()
+        env_path = Path(ENV_PATH)
+
+        if not env_path.exists():
+            env_path.parent.mkdir(parents=True, exist_ok=True)
+            env_path.touch()
+
+        set_key(env_path, "OPENROUTER_API_KEY", new_key)
+        load_dotenv(dotenv_path=env_path, override=True)
         global OPENROUTER_API_KEY
         OPENROUTER_API_KEY = new_key
         messagebox.showinfo("Saved","API key updated succesfully.")
