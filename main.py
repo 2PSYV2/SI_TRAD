@@ -44,7 +44,7 @@ ensure_requirements()
 
 ################### Main segment ###################
 
-import json, time, ctypes, requests
+import json, time, ctypes, requests, subprocess
 import tkinter as tk # GUI lib
 from tkinter import ttk, messagebox, filedialog, PhotoImage, simpledialog
 from dotenv import load_dotenv, set_key # enviorment params extracor
@@ -53,7 +53,7 @@ from dotenv import load_dotenv, set_key # enviorment params extracor
 # Export output into csv or json
 
 # Version + author
-VERSION = "V-1.0-Knorozov"
+VERSION = "V-1.1-Knorozov"
 AUTHOR = "Eugene Edelshteyn Kylymnyk"
 
 # Global paths
@@ -385,8 +385,9 @@ def save_result():
         log_text.insert(tk.END,f"Output saved at {path}\n")
 
 def open_results():
-    #TODO
-    #Open the window to ask for JSON files to compare and compute
+    root.withdraw()
+    subprocess.call([sys.executable, "evaluate.py"])
+    root.deiconify()
     return
 
 def open_preferences():
@@ -549,11 +550,16 @@ def open_preferences():
 
 def open_about():
     about = tk.Toplevel(root)
-    about.title("About OpenRouter Langer")
+    about.title("About - OpenRouter Langer")
     about.geometry("640x680")
     about.minsize(200,200)
     about.resizable(False, False)
     about.grab_set()
+    try:
+        about.iconbitmap(ICO_PATH)
+    except:
+        icon = PhotoImage(file=PNG_PATH)
+        about.iconphoto(True, icon)
 
     about.update_idletasks()
     x = root.winfo_x() + (root.winfo_width() // 2 - about.winfo_width() // 2)
@@ -569,7 +575,7 @@ def open_about():
         "- Email: yevheniiedelshteyn17@gmail.com\n\n"
         "- GitHub: https://github.com/2PSYV2\n\n"
         "Licensed under the MIT License\n"
-        "© 2025 Yevhenii Edelshteyn Kylymnyk"
+        f"© 2025 {AUTHOR}"
     )
 
     try:
