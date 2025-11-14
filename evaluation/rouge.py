@@ -1,6 +1,8 @@
 # ROUGE-L Implementation:
 # Ref: https://en.wikipedia.org/wiki/ROUGE_(metric)
 
+name = "ROUGE-L"
+
 def lcs(a, b):
     m, n = len(a), len(b)
     dp = [[0]*(n+1) for _ in range(m+1)]
@@ -13,7 +15,7 @@ def lcs(a, b):
                 dp[i+1][j+1] = max(dp[i][j+1], dp[i+1][j])
     return dp[m][n]
 
-def compute_togue_l(reference: str, hypothesis: str) -> float:
+def evaluate(reference: str, hypothesis: str) -> float:
     ref_tokens = reference.split()
     hyp_tokens = hypothesis.split()
 

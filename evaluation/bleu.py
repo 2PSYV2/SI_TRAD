@@ -1,9 +1,11 @@
 # BLEU implementation
 # Ref: https://machinetranslate.org/bleu
 
+name = "BLEU"
+
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 
-def compute_bleu(reference: str, hypothesis: str) -> float:
+def evaluate(reference: str, hypothesis: str) -> float:
     ref_tokens = reference.split()
     hyp_tokens = hypothesis.split()
 

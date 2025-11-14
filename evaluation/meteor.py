@@ -1,7 +1,9 @@
 # METEOR Implementation
 # Ref: https://machinetranslate.org/meteor
 
-def compute_meteor(reference: str, hypothesis: str) -> float:
+name = "METEOR"
+
+def evaluate(reference: str, hypothesis: str) -> float:
     ref_tokens = reference.split()
     hyp_tokens = hypothesis.split()
 

@@ -1,7 +1,8 @@
-import json, os
+import json, os, importlib, pkgutil, evaluation
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk, PhotoImage
 from pathlib import Path
+from datetime import datetime
 
 VERSION = "V-1.2-Knorozov"
 AUTHOR = "Eugene Edelshteyn Kylymnyk"
@@ -18,6 +19,25 @@ main_content_frame = None
 file_selector = None
 scroll_canvas = None
 scroll_frame = None
+
+
+
+def load_evaluators():
+    evaluators = {}
+
+    package = evaluation
+    for loader, module_name, is_pkg in pkgutil.iter_modules(package.__path__):
+        module = importlib.import_module(f"evaluation.{module_name}")
+
+        if hasattr(module, "evaluate"):
+            metric_name = getattr(module, "name", module_name)
+            evaluators[metric_name] = module.evaluate
+        else:
+            print(f"[Warning] Module {module_name} has no 'evaluate' function, skipped.")
+    
+    return evaluators
+
+EVALUATORS = load_evaluators()
 
 def load_json_files():
     global parsed_files
@@ -139,7 +159,87 @@ def display_file_data():
     root.geometry(f"{content_width}x{final_height}")
 
 def auto_evaluate():
-    messagebox.showinfo("Auto Evaluate", "STUB")
+    global EVALUATORS
+    if not parsed_files:
+        messagebox.showwarning("Warning", "You MUST load JSON files first.")
+        return
+
+    results_json = {
+        "timestamp": datetime.now().isoformat(),
+        "metrics_used": list(EVALUATORS.keys()),
+        "models": {}
+    }
+    
+    for file in parsed_files:
+        model_name = file["model"]
+        if model_name not in results_json["models"]:
+            results_json["models"][model_name] = {metric: [] for metric in EVALUATORS}
+
+            for entry in file["results"]:
+                ref = entry.get("reference","")
+                hyp = entry.get("llm_translation","")
+
+                for metric_name, metric_fn in EVALUATORS.items():
+                    try:
+                        score = metric_fn(ref, hyp)
+                    except Exception as e:
+                        score = None
+                        print(f"[Error] {metric_name} failed: {e}")
+
+                    results_json["models"][model_name][metric_name].append(
+                        {
+                            "id": entry["id"],
+                            "reference": ref,
+                            "hypothesis": hyp,
+                            "score": score
+                        }
+                    )
+    out_path = Path("sets/output/evaluation_output") / f"evaluation_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(results_json, f , indent=2, ensure_ascii=False)
+    messagebox.showinfo("Auto Evaluator",f"Evaluation complete.\nSaved to:\n{out_path}")
+
+def evaluate_single_metric(metric_name):
+    if not parsed_files:
+        messagebox.showwarning("Warning","Load JSON files first.")
+    metric_fn = EVALUATORS[metric_name]
+
+    results_json = {
+        "timestamp": datetime.now().isoformat(),
+        "metrics_used": list(EVALUATORS.keys()),
+        "models": {}
+    }
+
+    for file in parsed_files:
+        model_name = file["model"]
+
+        if model_name not in results_json["models"]:
+            results_json["models"][model_name] = []
+
+        for entry in file["results"]:
+            ref = entry.get("reference", "")
+            hyp = entry.get("llm_translation", "")
+
+            try:
+                score = metric_fn(ref, hyp)
+            except Exception as e:
+                score = None
+                print(f"[Error] {metric_name} failed: {e}")
+
+            results_json["models"][model_name].append(
+                {
+                    "id": entry["id"],
+                    "reference": ref,
+                    "hypothesis": hyp,
+                    "score": score
+                }
+            )
+
+    out_path = Path("sets/output/evaluation_output") / f"eval_{metric_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(results_json, f, indent=2, ensure_ascii=False)
+
+    messagebox.showinfo("Evaluation Complete",f"Evaluation with {metric_name} saved to:\n{out_path}")
 
 def open_about():
     about = tk.Toplevel(root)
@@ -199,10 +299,18 @@ menubar = tk.Menu(root)
 
 file_menu = tk.Menu(menubar, tearoff=0)
 file_menu.add_command(label="Load JSON Files...", command=load_json_files)
-file_menu.add_command(label="Evaluate Automatically...", command=auto_evaluate)
 file_menu.add_separator()
 file_menu.add_command(label="Exit", command=root.destroy)
 menubar.add_cascade(label="File", menu=file_menu)
+
+tools_menu = tk.Menu(menubar, tearoff=0)
+tools_menu.add_command(label="Evaluate Automatically...", command=auto_evaluate)
+evaluate_submenu = tk.Menu(tools_menu, tearoff=0)
+for metric_name in EVALUATORS.keys():
+    evaluate_submenu.add_command(label=metric_name, command=lambda m=metric_name: evaluate_single_metric(m))
+tools_menu.add_cascade(label="Evaluate...", menu=evaluate_submenu)
+# TODO add a list of evaluator algorithms
+menubar.add_cascade(label="Tools", menu=tools_menu)
 
 help_menu = tk.Menu(menubar, tearoff=0)
 help_menu.add_command(label="About", command=open_about)
