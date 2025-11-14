@@ -87,13 +87,16 @@ SYSTEM_ROLES = [
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 def reset_to_default():
-    global DEFAULT_CONFIG
+    global DEFAULT_CONFIG, MODELS, LANGUAGES, API_URL, SYSTEM_ROLES
+
     if len(DEFAULT_CONFIG)==0:
         with open(DEFAULT_CONFIG_PATH, "r", encoding="utf-8") as f:
             DEFAULT_CONFIG = json.load(f)
-    global MODELS, LANGUAGES
+
     MODELS = DEFAULT_CONFIG["models"].copy()
     LANGUAGES = DEFAULT_CONFIG["languages"].copy()
+    API_URL = DEFAULT_CONFIG["api"]
+    SYSTEM_ROLES = DEFAULT_CONFIG["system_roles"].copy()
 
     save_config()
     refresh_menus()
@@ -373,6 +376,7 @@ def on_lang_select(event):
 def refresh_menus():
     model_menu["values"] = MODELS + ["+ Add new..."]
     lang_menu["values"] = LANGUAGES + ["+ Add new..."]
+    role_menu["values"] = SYSTEM_ROLES + ["+ Add new..."]
 
 def save_result():
     content = output_text.get("1.0",tk.END).strip()
@@ -392,6 +396,8 @@ def open_results():
     return
 
 def open_preferences():
+    global role_menu, role_var
+
     pref = tk.Toplevel(root)
     pref.title("Preferences")
     pref.geometry("640x480")
@@ -514,7 +520,7 @@ def open_preferences():
             return
         selected = role_var.get()
         if selected:
-            SYSTEM_ROLES = [selected]
+            SYSTEM_ROLES[0] = selected
             save_config()
 
     role_menu.bind("<<ComboboxSelected>>", set_role)
@@ -526,6 +532,7 @@ def open_preferences():
             save_config()
             role_menu["values"] = SYSTEM_ROLES + ["+ Add new..."]
             messagebox.showinfo("Removed", f"System role removed: {selected}")
+        role_var.set(SYSTEM_ROLES[0] if SYSTEM_ROLES else "")
 
     tk.Button(scroll_frame, text="Remove Selected Role", command=remove_role)\
         .pack(anchor="w", padx=PADX, pady=(2, 8))
