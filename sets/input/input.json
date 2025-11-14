@@ -11,6 +11,56 @@
       "id": 2,
       "original": "The sun is shining brightly today.",
       "reference": "El sol brilla intensamente hoy."
+    },
+    {
+      "id": 3,
+      "original": "I forgot to bring my keys, so now I have to wait outside until someone arrives.",
+      "reference": "Olvidé traer mis llaves, así que ahora tengo que esperar fuera hasta que llegue alguien."
+    },
+    {
+      "id": 4,
+      "original": "She bought a book about ancient civilizations because she has always been fascinated by history.",
+      "reference": "Ella compró un libro sobre civilizaciones antiguas porque siempre le ha fascinado la historia."
+    },
+    {
+      "id": 5,
+      "original": "Even though the weather forecast predicted heavy rain, the afternoon remained surprisingly calm and warm.",
+      "reference": "Aunque el pronóstico del tiempo anunciaba fuertes lluvias, la tarde se mantuvo sorprendentemente tranquila y cálida."
+    },
+    {
+      "id": 6,
+      "original": "When I finally reached the top of the hill, I realized the view was even more beautiful than I had imagined.",
+      "reference": "Cuando finalmente llegué a la cima de la colina, me di cuenta de que la vista era aún más hermosa de lo que había imaginado."
+    },
+    {
+      "id": 7,
+      "original": "The documentary explores how technological advances have changed the way we communicate and understand the world.",
+      "reference": "El documental explora cómo los avances tecnológicos han cambiado la manera en que nos comunicamos y entendemos el mundo."
+    },
+    {
+      "id": 8,
+      "original": "He tried to explain the concept as clearly as possible, but the audience still found it difficult to grasp fully.",
+      "reference": "Intentó explicar el concepto lo más claramente posible, pero el público aún lo encontró difícil de comprender por completo."
+    },
+    {
+      "id": 9,
+      "original": "Despite their initial disagreements, the team managed to collaborate effectively and finish the project ahead of schedule.",
+      "reference": "A pesar de sus desacuerdos iniciales, el equipo logró colaborar de manera eficaz y terminar el proyecto antes de lo previsto."
+    },
+    {
+      "id": 10,
+      "original": "The scientist emphasized that even minor changes in the environment can produce significant long-term consequences.",
+      "reference": "La científica enfatizó que incluso los cambios pequeños en el entorno pueden producir consecuencias significativas a largo plazo."
+    },
+    {
+      "id": 11,
+      "original": "As the city continued to expand rapidly, officials began implementing new policies to manage traffic, pollution, and housing demands.",
+      "reference": "A medida que la ciudad seguía expandiéndose rápidamente, las autoridades comenzaron a implementar nuevas políticas para gestionar el tráfico, la contaminación y la demanda de vivienda."
+    },
+    {
+      "id": 12,
+      "original": "Although the novel is set in a fictional country, many readers have noted that its themes mirror real social issues that remain relevant today.",
+      "reference": "Aunque la novela está ambientada en un país ficticio, muchos lectores han señalado que sus temas reflejan problemas sociales reales que siguen siendo relevantes hoy en día."
     }
   ]
 }

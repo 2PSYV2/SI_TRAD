@@ -53,7 +53,7 @@ from dotenv import load_dotenv, set_key # enviorment params extracor
 # Export output into csv or json
 
 # Version + author
-VERSION = "V-1.1-Knorozov"
+VERSION = "V-1.2-Knorozov"
 AUTHOR = "Eugene Edelshteyn Kylymnyk"
 
 # Global paths
@@ -211,7 +211,8 @@ def bulk_translate_json():
     prompt = (
         f"you are a professional translation ssytem.\n"
         f"Trasnlate the folowing sentences from {src_lang} to {tgt_lang}.\n"
-        f"Return ONLY a valid JSON array of objects with fields 'id' and 'translation'.\n\n"
+        f"Return ONLY a valid JSON array of objects with fields 'id' and 'translation'. Do not add explanations, notes, comments, or text outside the JSON.\n"
+        f"The response MUST start with '[' and end with ']'.\n\n"
         f"{numbered_text}"
     )
 
@@ -592,6 +593,35 @@ def open_about():
 
     about.update_idletasks()
     about.geometry("")
+
+# Unused for now
+def open_license():
+    license_path = Path("LICENSE.txt")
+
+    if not license_path.exists():
+        messagebox.showerror("Error", "LICENSE.txt is missing in project directory.")
+        return
+    
+    try:
+        with open(license, "r", encoding="utf-8") as f:
+            license_text = f.read()
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to load LICENSE:\n{e}")
+        return
+    
+    win = tk.Toplevel(root)
+    win.title("About - OpenRouter Langer")
+    win.geometry("640x680")
+    win.minsize(200,200)
+    win.resizable(False, False)
+    win.grab_set()
+
+    try:
+        win.iconbitmap(ICO_PATH)
+    except:
+        icon = PhotoImage(file=PNG_PATH)
+        win.iconphoto(True, icon)
+    
 
 ####################################################################
 
