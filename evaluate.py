@@ -4,6 +4,8 @@ from tkinter import filedialog, messagebox, ttk, PhotoImage
 from pathlib import Path
 from datetime import datetime
 
+from graph_eval import open_graph_window
+
 VERSION = "V-1.5-Knorozov"
 AUTHOR = "Eugene Edelshteyn Kylymnyk"
 
@@ -305,11 +307,12 @@ menubar.add_cascade(label="File", menu=file_menu)
 
 tools_menu = tk.Menu(menubar, tearoff=0)
 tools_menu.add_command(label="Evaluate Automatically...", command=auto_evaluate)
+tools_menu.add_command(label="Graph Evaluation", command=open_graph_window)
+tools_menu.add_separator()
 evaluate_submenu = tk.Menu(tools_menu, tearoff=0)
 for metric_name in EVALUATORS.keys():
     evaluate_submenu.add_command(label=metric_name, command=lambda m=metric_name: evaluate_single_metric(m))
 tools_menu.add_cascade(label="Evaluate...", menu=evaluate_submenu)
-# TODO add a list of evaluator algorithms
 menubar.add_cascade(label="Tools", menu=tools_menu)
 
 help_menu = tk.Menu(menubar, tearoff=0)

@@ -3,16 +3,13 @@
 
 name = "BLEU"
 
-from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
+from sacrebleu.metrics import BLEU
 
-def evaluate(reference: str, hypothesis: str) -> float:
-    ref_tokens = reference.split()
-    hyp_tokens = hypothesis.split()
+metric = BLEU(effective_order=True)
 
-    smoothie = SmoothingFunction().method4 # method 4 works better for phrase convertions
-    # TODO Expose the method so the user could edit it
-
+def evaluate(reference, hypothesis):
     try:
-        return sentence_bleu([ref_tokens], hyp_tokens, smoothing_function=smoothie)
+        score = metric.sentence_score(hypothesis, [reference])
+        return float(score.score / 100)
     except:
         return 0.0
